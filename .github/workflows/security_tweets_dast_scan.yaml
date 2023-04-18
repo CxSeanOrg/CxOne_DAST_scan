@@ -6,8 +6,8 @@ on:
   #  types: [opened, reopened, synchronize]
   #  branches: [ "main" ]
   #push: 
-  #    branches:
-  #    - main
+     branches:
+     - main
   workflow_dispatch: # *** this adds a run button ***
 
 permissions:
@@ -36,7 +36,7 @@ jobs:
         command: "web"
         config: './security_tweets.yaml'
         base_url: "https://ast.checkmarx.net"
-        environment_id: "${{secrets.CX_ENVIRONMENT_ID}}"
+        environment_id: "b554793b-36b6-49ff-9fb7-e6aedb8a7932"
         fail_on: "HIGH"
         verbose: true
         output: ./output
