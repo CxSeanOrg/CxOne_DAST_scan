@@ -1,4 +1,4 @@
-name: CxSeanC Gin Juice
+name: CxSeanC
 
 # Controls when the workflow will run
 on:
@@ -6,8 +6,8 @@ on:
     types: [opened, reopened, synchronize]
     branches: [ "main" ]
   push: 
-  #    branches:
-  #    - main
+     branches:
+     - main
   workflow_dispatch: # *** this adds a run button ***
 
 permissions:
