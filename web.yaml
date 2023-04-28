@@ -1,0 +1,86 @@
+---
+env:
+  contexts:
+    - name: "Testfire Context"
+      urls:
+        - "http://testfire.net/"
+      includePaths:
+        - "http://testfire.net/*"
+      excludePaths: []
+      authentication:
+        method: "form"
+        parameters:
+          loginPageUrl: "http://testfire.net/login.jsp"
+          loginRequestUrl: "http://testfire.net/doLogin"
+          loginRequestBody: "uid={%username%}&passw={%password%}"
+        verification:
+          method: "response"
+          loggedInRegex: "Sign Off"
+          loggedOutRegex: "Sign In"
+          pollFrequency: 60
+          pollUnits: "requests"
+          pollUrl: ""
+          pollPostData: ""
+      sessionManagement:
+        method: "cookie"
+        parameters: {}
+      technology:
+        exclude: []
+      users:
+        - name: "test_user"
+          credentials:
+            password: "demo1234"
+            username: "jsmith"
+  parameters:
+    failOnError: true
+    failOnWarning: false
+    progressToStdout: true
+  vars: {}
+jobs:
+  - parameters:
+      scanOnlyInScope: true
+      enableTags: false
+    rules: []
+    name: "passiveScan-config"
+    type: "passiveScan-config"
+  - parameters:
+      context: "Testfire Context"
+      user: "test_user"
+      url: ""
+      maxDuration: 0
+      maxDepth: 0
+      maxChildren: 0
+    name: "spider"
+    type: "spider"
+  - parameters:
+      context: "Testfire Context"
+      user: "test_user"
+      url: ""
+      maxDuration: 60
+      maxCrawlDepth: 10
+      numberOfBrowsers: 1
+      runOnlyIfModern: false
+    name: "spiderAjax"
+    type: "spiderAjax"
+  - parameters: {}
+    name: "passiveScan-wait"
+    type: "passiveScan-wait"
+  - parameters:
+      context: "Testfire Context"
+      user: "test_user"
+      policy: ""
+      maxRuleDurationInMins: 0
+      maxScanDurationInMins: 0
+    policyDefinition:
+      defaultStrength: "medium"
+      defaultThreshold: "medium"
+      rules: []
+    name: "activeScan"
+    type: "activeScan"
+  - parameters:
+      template: "risk-confidence-html"
+      reportDir: ""
+      reportTitle: "ZAP Scanning Report"
+      reportDescription: ""
+    name: "report"
+    type: "report"
