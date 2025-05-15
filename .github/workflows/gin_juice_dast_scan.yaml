@@ -11,22 +11,24 @@ permissions:
 jobs:
   dast-scan:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
+      - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Run Checkmarx DAST (latest)
+      - name: Pull and run DAST (latest, root user)
         run: |
           docker pull checkmarx/dast:latest
           docker run --rm \
+            --user 0 \                               # ← run as root like CodeBuild
             -e CX_APIKEY=${{ secrets.CX_APIKEY }} \
             -v ${{ github.workspace }}:/demo \
             checkmarx/dast:latest \
             web \
-            --environment-id=b97d9063-cf64-4b0f-bd98-ef3caf3b451b \
-            --config=/demo/gin_juice.yaml \
-            --base-url=https://ast.checkmarx.net \
-            --output=/demo/output \
+            --environment-id=d8c28879-30b0-4b65-aa74-55a1ab0d4e21 \
+            --config=/demo/zap_config_web.yaml \
+            --base-url=https://us.ast.checkmarx.net \
+            --output=/demo/test_output \
             --timeout=10000 \
             --update-interval=10 \
             --jvm-properties=-Xmx3G \
@@ -36,17 +38,10 @@ jobs:
             --retry-delay=20 \
             --fail-on HIGH
 
-      - name: Fix output permissions
-        if: always()
-        run: |
-          if [ -d "${{ github.workspace }}/output" ]; then
-            sudo chown -R 1001:1001 "${{ github.workspace }}/output"
-          fi
-
-      - name: Upload DAST results
+      - name: Upload DAST artifacts
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: CxOne-DAST-Output
-          path: ./output
+          path: ./test_output
           if-no-files-found: warn
