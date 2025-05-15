@@ -33,7 +33,7 @@ jobs:
             -v "${{ github.workspace }}:/demo" \                 # mount repo at /demo
             checkmarx/dast:latest \
               web \
-              --environment-id=b97d9063-cf64-4b0f-bd98-ef3caf3b451b \
+              --environment-id=894af0e2-df03-4e60-8089-233cfc161deb \
               --config=/demo/gin_juice.yaml \                    # 🎯 now in repo root
               --base-url=https://ast.checkmarx.net \
               --output=/demo/test_output \
