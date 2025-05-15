@@ -1,52 +1,50 @@
-# CxSeanC
+# Controls when the workflow will run
+on:
+  #pull_request:
+  #  types: [opened, reopened, synchronize]
+  #  branches: [ "main" ]
+  push: 
+      branches:
+      - main
+  workflow_dispatch: # *** this adds a run button ***
 
-# # Controls when the workflow will run
-# on:
-#   #pull_request:
-#   #  types: [opened, reopened, synchronize]
-#   #  branches: [ "main" ]
-#   push: 
-#       branches:
-#       - main
-#   workflow_dispatch: # *** this adds a run button ***
+permissions:
+  contents: read
 
-# permissions:
-#   contents: read
-
-# # A workflow run is made up of one or more jobs that can run sequentially or in parallel
-# jobs:
-#   # This workflow contains a single job called "build"
-#   build:
-#     permissions:
-#       contents: read # for actions/checkout to fetch code
-#       security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
-#       actions: read # only required for a private repository by github/codeql-action/upload-sarif
-#     # The type of runner that the job will run on
-#     runs-on: ubuntu-latest
-#     # Steps represent a sequence of tasks that will be executed as part of the job
-#     steps:
-#     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-#     - uses: actions/checkout@v3
-#     # Scan
-#     - name: Checkmarx DAST Github Action
-#       uses: Checkmarx/dast-github-action@v1.0.2
-#       env:
-#         CX_APIKEY: ${{ secrets.CX_APIKEY }}
-#       with:
-#         command: "web"
-#         config: './gin_juice.yaml'
-#         # openapi: file here
-#         base_url: "https://ast.checkmarx.net" #"https://deu.ast.checkmarx.net"
-#         environment_id: "d2c4567b-36ae-458c-a4ad-3f537864ef33" #"2f776f4a-dfda-46d1-9fda-b879307d9b76"
-#         fail_on: "HIGH"
-#         verbose: true
-#         output: ./output
-#     - name: Reclaim output directory  
-#       if: always()  
-#       run: sudo chown -R 1001:1001 ${{ github.workspace }}/output
-#     - uses: actions/upload-artifact@v3
-#       if: always()
-#       name: Upload Logs
-#       with:
-#         name: report
-#         path: ./output
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    permissions:
+      contents: read # for actions/checkout to fetch code
+      security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
+      actions: read # only required for a private repository by github/codeql-action/upload-sarif
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+    - uses: actions/checkout@v3
+    # Scan
+    - name: Checkmarx DAST Github Action
+      uses: Checkmarx/dast-github-action@v1.0.2
+      env:
+        CX_APIKEY: ${{ secrets.CX_APIKEY }}
+      with:
+        command: "web"
+        config: './gin_juice.yaml'
+        # openapi: file here
+        base_url: "https://ast.checkmarx.net"
+        environment_id: "b97d9063-cf64-4b0f-bd98-ef3caf3b451b" 
+        fail_on: "HIGH"
+        verbose: true
+        output: ./output
+    - name: Reclaim output directory  
+      if: always()  
+      run: sudo chown -R 1001:1001 ${{ github.workspace }}/output
+    - uses: actions/upload-artifact@v3
+      if: always()
+      name: Upload Logs
+      with:
+        name: report
+        path: ./output
