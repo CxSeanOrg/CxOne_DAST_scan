@@ -1,62 +1,46 @@
-name: CxONE Dast Scan Gin and Juice
 on:
-  #pull_request:
-  # branches:
-  # - main
-  #push: 
-  # branches:
-  # - main
-    
-  workflow_dispatch: #adds a 'run now' button
-  
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
 permissions:
   contents: read
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
 
 jobs:
   build:
     permissions:
-      contents: read # for actions/checkout to fetch code
-      security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
-      actions: read # only required for a private repository by github/codeql-action/upload-sarif
-     # The type of runner that the job will run on 
+      contents: read
+      security-events: write
+      actions: read
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Create Output folder
-        run: mkdir ${{ github.workspace }}/output_fold
-      - name: Change dir owner
-        run: sudo chown -R 1000:1000 ${{ github.workspace }}
+      - uses: actions/checkout@v3
+
       - name: Checkmarx DAST Github Action
-        uses: Checkmarx/dast-github-action@v1.0.6
+        uses: Checkmarx/dast-github-action@v1.0.3 # or latest known working version
         env:
-          # prod
           CX_APIKEY: ${{ secrets.CX_APIKEY }}
-          # canary: 
-          # CX_APIKEY: ${{ secrets.CANARY_API_KEY }}
         with:
-            command: web
-            config: './gin_juice_noauth.yaml'
-            log_level: info
-            #prod
-            base_url: "https://ast.checkmarx.net"
-            environment_id: "e64ac486-f2e3-486e-8757-fece216af179"
-            # canary
-            #base_url: "https://deu.ast.checkmarx.net"
-            #environment_id: "xxx"
-            fail_on: ""
-            verbose: true
-            output: ${{ github.workspace }}/output_fold #./output
+          command: "web"
+          config: './gin_juice.yaml'
+          base_url: "https://ast.checkmarx.net"
+          environment_id: "b97d9063-cf64-4b0f-bd98-ef3caf3b451b"
+          fail_on: "HIGH"
+          verbose: true
+          output: ./output
+
       - name: Reclaim output directory
         if: always()
-        run: sudo chown -R 1001:1001 ${{ github.workspace }}/output_fold
-      - uses: actions/upload-artifact@v3
+        run: |
+          if [ -d "${{ github.workspace }}/output" ]; then
+            sudo chown -R 1001:1001 "${{ github.workspace }}/output"
+          fi
+
+      - uses: actions/upload-artifact@v4
         if: always()
         name: Upload Logs
         with:
           name: report
-          path: ${{ github.workspace }}/output_fold
+          path: ./output
+          if-no-files-found: warn
