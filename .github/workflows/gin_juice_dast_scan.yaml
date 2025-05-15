@@ -9,38 +9,43 @@ permissions:
 
 jobs:
   build:
-    permissions:
-      contents: read
-      security-events: write
-      actions: read
+    name: Run CxOne DAST Web Scan
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-      - name: Checkmarx DAST Github Action
-        uses: Checkmarx/dast-github-action@v1.0.3 # or latest known working version
-        env:
-          CX_APIKEY: ${{ secrets.CX_APIKEY }}
-        with:
-          command: "web"
-          config: './gin_juice.yaml'
-          base_url: "https://ast.checkmarx.net"
-          environment_id: "b97d9063-cf64-4b0f-bd98-ef3caf3b451b"
-          fail_on: "HIGH"
-          verbose: true
-          output: ./output
+      - name: Pull and Run Checkmarx DAST via Docker
+        run: |
+          docker pull checkmarx/dast:latest
+          docker run --rm \
+            -e CX_APIKEY=${{ secrets.CX_APIKEY }} \
+            -v ${{ github.workspace }}:/app \
+            checkmarx/dast:latest web \
+            --environment-id=b97d9063-cf64-4b0f-bd98-ef3caf3b451b \
+            --config=/app/gin_juice.yaml \
+            --base-url=https://ast.checkmarx.net \
+            --output=/app/output \
+            --timeout=10000 \
+            --update-interval=10 \
+            --jvm-properties=-Xmx3G \
+            --log-level=info \
+            --verbose \
+            --retry=3 \
+            --retry-delay=20 \
+            --fail-on HIGH
 
-      - name: Reclaim output directory
+      - name: Reclaim output directory permissions
         if: always()
         run: |
           if [ -d "${{ github.workspace }}/output" ]; then
             sudo chown -R 1001:1001 "${{ github.workspace }}/output"
           fi
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload DAST Logs
+        uses: actions/upload-artifact@v4
         if: always()
-        name: Upload Logs
         with:
-          name: report
+          name: CxOne-DAST-Output
           path: ./output
           if-no-files-found: warn
