@@ -6,7 +6,7 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
-  workflow_dispatch:   # adds a “Run workflow” button in the Actions tab
+  workflow_dispatch:   # manual trigger
 
 permissions:
   contents: read
@@ -17,42 +17,40 @@ concurrency:
 
 jobs:
   dast_scan:
-    name: Run CxONE DAST API scan
     runs-on: ubuntu-latest
     permissions:
-      contents: read           # for actions/checkout
-      security-events: write   # for uploading SARIF if needed
-      actions: read            # only required for private repos
+      contents: read
+      security-events: write
+      actions: read
     steps:
-      - name: Checkout source
+      - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Create output folder
-        run: mkdir -p "${{ github.workspace }}/output_fold"
-
-      - name: Change workspace owner (needed for rootless Docker)
-        run: sudo chown -R 1000:1000 "${{ github.workspace }}"
+      - name: Prepare output folder
+        run: |
+          mkdir -p "${{ github.workspace }}/output_fold"
+          sudo chown -R 1000:1000 "${{ github.workspace }}"
 
       - name: Checkmarx DAST GitHub Action
-        uses: Checkmarx/dast-github-action@v1.0.6
+        uses: Checkmarx/dast-github-action@v2.3.0
         env:
-          CX_APIKEY: ${{ secrets.CX_APIKEY }}     # production key
+          CX_APIKEY: ${{ secrets.CX_APIKEY }}
         with:
           command: "api"
           config: "./altoro_mutual.yaml"
           openapi: "./altoro_mutual.json"
           log_level: "info"
-          base_url: "https://ast.checkmarx.net"   # production
+          base_url: "https://ast.checkmarx.net"
           environment_id: "0320bf69-192d-4b59-b1cf-7da4bd91d5d1"
-          fail_on: ""        # leave blank to never fail the workflow
+          fail_on: ""
           verbose: true
           output: "${{ github.workspace }}/output_fold"
 
-      - name: Restore output directory ownership (CI user)
+      - name: Restore ownership for artifacts
         if: always()
         run: sudo chown -R 1001:1001 "${{ github.workspace }}/output_fold"
 
-      - name: Upload DAST logs & reports
+      - name: Upload DAST logs and reports
         if: always()
         uses: actions/upload-artifact@v3
         with:
