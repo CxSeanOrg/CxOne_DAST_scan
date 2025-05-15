@@ -20,12 +20,12 @@ jobs:
         run: |
           docker pull checkmarx/dast:latest
           docker run --rm \
-            --user 0 \                               # ← run as root like CodeBuild
+            --user 0 \ 
             -e CX_APIKEY=${{ secrets.CX_APIKEY }} \
             -v ${{ github.workspace }}:/demo \
             checkmarx/dast:latest \
             web \
-            --environment-id=d8c28879-30b0-4b65-aa74-55a1ab0d4e21 \
+            --environment-id=b97d9063-cf64-4b0f-bd98-ef3caf3b451b \
             --config=/demo/zap_config_web.yaml \
             --base-url=https://us.ast.checkmarx.net \
             --output=/demo/test_output \
