@@ -13,15 +13,25 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1. Checkout the code
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Pull and run DAST (latest, root user)
+      # 2. Pull the latest Checkmarx DAST image
+      - name: Pull DAST image
+        run: docker pull checkmarx/dast:latest
+
+      # 3. Run the scan (root user so the container can create /demo/test_output)
+      - name: Run DAST scan
+        env:
+          CX_APIKEY: ${{ secrets.CX_APIKEY }}   # set the secret as an environment variable
         run: |
-          docker pull checkmarx/dast:latest
+          # make sure the host output folder exists
+          mkdir -p "${{ github.workspace }}/test_output"
+
           docker run --rm \
-            --user 0 \ 
-            -e CX_APIKEY=${{ secrets.CX_APIKEY }} \
+            --user 0 \
+            -e CX_APIKEY=$CX_APIKEY \
             -v ${{ github.workspace }}:/demo \
             checkmarx/dast:latest \
             web \
@@ -38,6 +48,7 @@ jobs:
             --retry-delay=20 \
             --fail-on HIGH
 
+      # 4. Always upload whatever the scan wrote to /test_output
       - name: Upload DAST artifacts
         uses: actions/upload-artifact@v4
         if: always()
