@@ -1,3 +1,5 @@
+name: CxOne DAST Scan
+
 on:
   push:
     branches:
@@ -11,6 +13,7 @@ jobs:
   build:
     name: Run CxOne DAST Web Scan
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -19,9 +22,11 @@ jobs:
         run: |
           docker pull checkmarx/dast:latest
           docker run --rm \
+            --entrypoint "" \
             -e CX_APIKEY=${{ secrets.CX_APIKEY }} \
             -v ${{ github.workspace }}:/app \
-            checkmarx/dast:latest web \
+            checkmarx/dast:latest \
+            web \
             --environment-id=b97d9063-cf64-4b0f-bd98-ef3caf3b451b \
             --config=/app/gin_juice.yaml \
             --base-url=https://ast.checkmarx.net \
