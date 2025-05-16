@@ -1,56 +1,115 @@
-name: CxOne DAST Scan
-
-on:
-  push:
-    branches: [ main ]
-  workflow_dispatch:
-
-permissions:
-  contents: read            # required for checkout + artifact upload
-
+---
+env:
+  contexts:
+    - name: "GinAndJuice"
+      urls:
+        - "https://ginandjuice.shop"
+      includePaths:
+        - "https://ginandjuice.shop/*"
+      excludePaths: []
+      authentication:
+        method: "form"
+        parameters:
+          loginPageUrl: "https://ginandjuice.shop/login"
+          loginRequestUrl: "https://ginandjuice.shop/login"
+          loginRequestBody: "username={%username%}&password={%password%}"
+        verification:
+          method: "poll"
+          loggedInRegex: "Log out"
+          loggedOutRegex: "Log in"
+          pollFrequency: 60
+          pollUnits: "requests"
+          pollUrl: "https://ginandjuice.shop/my-account"
+          pollPostData: ""
+      sessionManagement:
+        method: "cookie"
+        parameters: {}
+      technology:
+        exclude: []
+      users:
+        - name: "carlos"
+          credentials:
+            password: "hunter2"
+            username: "carlos"
+  parameters:
+    failOnError: true
+    failOnWarning: false
+    progressToStdout: true
+  vars: {}
 jobs:
-  dast-scan:
-    runs-on: ubuntu-latest
-
-    steps:
-      # 1) Get the code
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      # 2) Pull image & run scan
-      - name: Run Checkmarx DAST
-        env:
-          CX_APIKEY: ${{ secrets.CX_APIKEY }}
-        run: |
-          # create output folder so host user owns it
-          mkdir -p "${{ github.workspace }}/test_output"
-
-          docker pull checkmarx/dast:latest
-
-          docker run --rm \
-            --user "$(id -u):$(id -g)" \                         # run as the runner user → no permissions issues later
-            -e CX_APIKEY="$CX_APIKEY" \
-            -v "${{ github.workspace }}:/demo" \                 # mount repo at /demo
-            checkmarx/dast:latest \
-              web \
-              --environment-id=894af0e2-df03-4e60-8089-233cfc161deb \
-              --config=/demo/gin_juice.yaml \                    # 🎯 now in repo root
-              --base-url=https://ast.checkmarx.net \
-              --output=/demo/test_output \
-              --timeout=10000 \
-              --update-interval=10 \
-              --jvm-properties=-Xmx3G \
-              --log-level=info \
-              --verbose \
-              --retry=3 \
-              --retry-delay=20 \
-              --fail-on HIGH
-
-      # 3) Upload the scan output
-      - name: Archive DAST results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: CxOne-DAST-Output
-          path: ./test_output
-          if-no-files-found: warn
+  - parameters:
+      maxAlertsPerRule: 0
+      scanOnlyInScope: true
+      maxBodySizeInBytesToScan: 0
+      enableTags: false
+    rules: []
+    name: "passiveScan-config"
+    type: "passiveScan-config"
+  - parameters:
+      context: "GinAndJuice"
+      user: "carlos"
+      url: "https://ginandjuice.shop/"
+      maxDuration: 10
+      maxDepth: 0
+      maxChildren: 0
+      acceptCookies: false
+      handleODataParametersVisited: false
+      handleParameters: "IGNORE_COMPLETELY"
+      maxParseSizeBytes: 0
+      parseComments: false
+      parseGit: false
+      parseRobotsTxt: false
+      parseSitemapXml: false
+      parseSVNEntries: false
+      postForm: false
+      processForm: false
+      requestWaitTime: 0
+      sendRefererHeader: false
+      userAgent: ""
+    name: "spider"
+    type: "spider"
+  - parameters:
+      context: "GinAndJuice"
+      user: "carlos"
+      url: "https://ginandjuice.shop/"
+      maxDuration: 60
+      maxCrawlDepth: 10
+      numberOfBrowsers: 16
+      runOnlyIfModern: false
+    name: "spiderAjax"
+    type: "spiderAjax"
+  - parameters: {}
+    name: "passiveScan-wait"
+    type: "passiveScan-wait"
+  - parameters:
+      context: "GinAndJuice"
+      user: "carlos"
+      policy: ""
+      maxRuleDurationInMins: 0
+      maxScanDurationInMins: 0
+      addQueryParam: false
+      delayInMs: 0
+      handleAntiCSRFTokens: false
+      injectPluginIdInHeader: false
+      scanHeadersAllRequests: false
+      threadPerHost: 5
+    policyDefinition:
+      defaultStrength: "medium"
+      defaultThreshold: "medium"
+      rules: []
+    name: "activeScan"
+    type: "activeScan"
+  #- parameters:
+  #    template: "risk-confidence-html"
+  #    reportDir: ""
+  #    reportTitle: "ZAP Scanning Report"
+  #    reportDescription: ""
+  #  name: "report"
+  #  type: "report"
+  - parameters:
+      template: "traditional-pdf"
+      reportDir: ""
+      reportTitle: "ZAP Scanning Report"
+      reportDescription: ""
+    name: "report-pdf"
+    type: "report"
